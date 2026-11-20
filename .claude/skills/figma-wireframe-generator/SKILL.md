@@ -96,8 +96,8 @@ needs a product decision → ask (§5). Re-inspect the affected frames; update t
 The spec hash differs from the sidecar's → re-run the Handoff check (a changed spec needs a new
 validation first). Then compare the spec with the Figma file by read-back — frame names, regions,
 states, reactions — and change only what differs, in place, keeping unrelated frames and their
-IDs; add new frames at their journey position (shift the following frames), move removed ones to a
-`99 - Archive` page. Revalidate the changed frames and every frame they connect to. Report
+IDs; add new frames at their journey position (shift the following frames), move removed ones to the
+`05 — Archive` page. Revalidate the changed frames and every frame they connect to. Report
 spec changes, wireframe changes and visual adjustments separately. Never rebuild the file
 wholesale unless asked.
 
@@ -140,7 +140,7 @@ separate UI-design phase.
 
 ## 9. Self-check before replying
 
-- Page 1 of the file shows phone screens side by side in journey order, not boxes and arrows.
+- Flow pages show phone screens side by side in journey order, not boxes and arrows; the Overview page is one compact screen.
 - Every screen, overlay and layout-changing state in scope is a full phone frame with every Layout
   row of the spec as a `Region/`; persistent elements are present wherever the spec says.
 - Every tap that leads to another frame is marked (ring · number · arrow · caption); no text

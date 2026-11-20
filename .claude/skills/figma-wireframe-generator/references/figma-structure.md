@@ -46,19 +46,27 @@ to create `<Product> — Wireframes`. Use only links returned by a tool. Then `c
 read-only inspection: pages (order), top-level frames with sizes, existing components, fonts. Adopt
 an existing convention; never delete or rename user content without asking.
 
-## 3. Pages (wireframes first — Figma opens the first page)
+## 3. Pages — by functional area (project convention since 2026-11-20)
+
+One file for the whole app. Pages follow functional areas and user flows, not screen types; system
+states sit in a `States: <ScreenID>` row next to their screen, not on a separate page. Adopt an
+existing file's structure; create only pages the MVP needs.
 
 | # | Page | Contents |
 |---|---|---|
-| 1 | `01 - Mobile Wireframes` | Phone frames for every screen, overlay and **journey state**, in rows (§4), with transition marks and prototype links |
-| 2 | `02 - Screen States` | Frames for **system-triggered** states that are not tap targets (loading, empty, offline, error, permission denied), grouped by screen — only if there are ~4 or more; otherwise a *States* row under the screen's row |
-| 3 | `03 - Components` | Wireframe components with their variants, grouped and labelled |
-| 4 | `04 - Flow Overview` | Optional, last: ≤ 12 small chips (ID + name), thin labelled arrows for the main path and branch points; fits one screenshot at 1024 px; never states, lists or prose |
+| 0 | `00 — Overview` | One screen: compact chip map of all flows (ID + name, `→`) and a status table; never states or prose |
+| 1 | `01 — Onboarding` | ON- flow rows, its states row, end copies of the screens it hands over to |
+| 2 | `02 — Daily Logging` | Today (CT-01), food logging (CT-02…CT-08), editing (CT-04), settings (ST-) — one page because they form one loop and prototype links cannot cross pages; states rows next to their screens |
+| 3 | `03 — Progress` | PR- rows and states; entry is a copy of CT-01 with the tab bar |
+| 4 | `04 — Components` | Wireframe components in sections Core / Daily logging / Onboarding / Progress |
+| 5 | `05 — Archive` | Replaced frames and earlier versions (one section per change, with a note why) |
 
-Prototype links cannot cross pages, so everything a user taps to reach lives on page 1; frames moved
-to page 2 lose their outgoing links (note it as not represented).
+A new area gets its own page only if its frames are not reached from another page's flow.
+Prototype links cannot cross pages, so everything a user taps to reach within one flow lives on that
+flow's page; a frame moved to another page loses its outgoing links (note it as not represented).
+Where a flow continues on another page, end the row with a copy of the next screen `(копія)`.
 
-## 4. Arrangement on page 1
+## 4. Arrangement on a flow page
 
 - **Rows = journeys.** Row 1 = the spec's main journey, entry → completion. Further rows = branches
   and secondary flows in the order their entry appears in the main journey. Each row is a `Section`
@@ -118,7 +126,7 @@ For every Actions row that moves the user to another frame, make it readable **a
 ## 7. Build order
 
 1. Components (return IDs) → 2. row 1, one or two frames per call, regions from the spec; **screenshot
-the row and look at it** → 3. branch rows → 4. system-state frames (page 2) → 5. transition marks,
+the row and look at it** → 3. branch rows → 4. system-state frames (`States: <ScreenID>` row under the screen's row) → 5. transition marks,
 reactions, captions → 6. optional overview, page order → 7. validation.
 Every call retry-safe, returns created IDs and counts; `placeholder = true` while building.
 
@@ -136,7 +144,7 @@ and reactions can be rebuilt after a relayout.
    and x/y — IDs and reactions survive. Add the missing regions; rebuild box-only frames; archive or
    delete (with the user's say-so) diagram cards.
 3. Frames moved between pages lose links — move system states only, after checking nothing targets
-   them. Wireframes page first; shrink the overview to chips.
+   them. Keep the overview to one screen of chips.
 4. Rebuild the transition marks (§6) and captions; validate with screenshots.
 
 ## 10. Sidecar `<dir>/<stem>.wireframes.md` (the only file this skill writes)
@@ -145,7 +153,7 @@ and reactions can be rebuilt after a relayout.
 # Wireframes — <spec path>
 - Figma: <link returned by the tool>
 - Device: 390 × 844 · Generated from spec SHA-256 <hash> on <date> · Handoff: <status>, iteration NN
-- Rows (page 01): Flow: <name> (n frames) · … · States page: n frames · Components: n
+- Rows (page `<NN — Area>`): Flow: <name> (n frames) · … · States: <ScreenID> (n frames) · Components: n
 
 ## Design assumptions
 A-01 … (one line each: assumption · what it affects)

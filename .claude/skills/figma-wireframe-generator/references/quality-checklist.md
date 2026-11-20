@@ -18,7 +18,7 @@ the Figma file back; the return value of a write call is not evidence.
 ## 2. Categories
 
 **G. Visual wireframe form — first.**
-G1 first page = the wireframes page · G2 every screen / overlay / layout-changing state in scope is
+G1 flow pages hold the wireframes; the first page is a one-screen overview (`figma-structure.md` §3) · G2 every screen / overlay / layout-changing state in scope is
 a top-level phone frame of the project size · G3 each frame has every `Region/` of its Layout rows,
 starting with the status bar · G4 no "title-only" frame (fewer than ~12 visible UI elements is
 suspicious — justify it from the spec or rebuild) · G5 nothing represented by a box, chip, node or

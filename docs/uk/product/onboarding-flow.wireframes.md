@@ -1,10 +1,10 @@
 # Wireframes — docs/uk/product/onboarding-flow.md
 
 - Figma: https://www.figma.com/design/fBMPokQnQHUsG1G0KfOuJn (fileKey `fBMPokQnQHUsG1G0KfOuJn`, той самий файл, що й для базового потоку)
-- Device: 390 × 844 · Generated from spec SHA-256 e55787001cdb31616cc903c4f9216ec50fa46387d14a25253df6404a8f8f1779 on 2026-11-17 · updated to SHA-256 7d3d21ea4566f0d85603154dae07aba321d38be96c3e38f45c59492833f90ae6 (Handoff: PASS, iteration 05 — D14–D18) · updated 2026-11-19 to SHA-256 09fa1d2517a4000b7e4c3e9f178f04baf0f11f73ca5563fa810de959b25a5702 (Handoff: PASS, iteration 06 — D19)
-- Page `05 - Onboarding Wireframes` (25 frames, 4 rows): Flow: Onboarding — main journey (lose weight) (14: ON-01 → … → ON-09 → копія CT-02) · Flow: Onboarding — edit answers · go to diary (3: ON-10, ON-06 редагування, копія CT-01) · Flow: Onboarding — safety answer (eating disorder) (2) · States: ON-03 · ON-04 · ON-11 (system-triggered) (6)
-- Components (page `03 - Components`, група «Onboarding», x ≈ 1000): `WF/Onboarding/Header` (Mode=Progress|Title), `WF/Onboarding/Option Card` (Default|Selected|Disabled), `WF/Onboarding/Option Row`, `WF/Onboarding/Check Row`, `WF/Onboarding/Chip`, `WF/Onboarding/Answer Row`; перевикористано `WF/Status Bar`, `WF/Button/Primary`, `WF/Button/Text`, `WF/Field`, `WF/Sheet/Header`
-- Prototype: 47 елементів із реакціями на сторінці 05 (13 переходів основного ряду, переходи між рядами, «‹» у 22 шапках = BACK); старт — «ON-01 Вітання» (flow «Onboarding (main journey)»)
+- Device: 390 × 844 · Generated from spec SHA-256 e5578700… on 2026-11-17 · **updated 2026-11-20 for SHA-256 5cf6c4447faf357d98ca63aba146c4d00816fe03cee8be1b1437396611d6d538 (Handoff: PASS, iteration 09 — D20–D22)**
+- Page `01 — Onboarding` (27 frames, 4 rows): Flow: Onboarding — main journey (lose weight) (15: ON-01 → **ON-12 Ваші дані** → ON-02 → … → ON-09 → копія CT-02) · Flow: Onboarding — edit answers · go to diary (3: ON-10, ON-06 редагування, копія CT-01 — перший день) · Flow: Onboarding — safety answer (eating disorder) (3: ON-05 → ON-11 → **копія CT-01 без норми**) · States: ON-03 · ON-04 · ON-11 (6)
+- Components: `04 — Components`, секція Onboarding
+- Prototype: 52 зв'язки; старт «Onboarding» на ON-01; ON-11 (усі 3 стани) «Продовжити без норми» → копія CT-01 без норми
 
 ## Design assumptions
 - A-01 пристрій 390 × 844, сірі тони, Inter, як у наявних вайрфреймах
@@ -18,9 +18,12 @@
 - A-11 (оновлено 2026-11-19, D19) картка «Як ваша норма стане точнішою» (`Region/Accuracy`) — того самого стилю, що й «Кілька порад»; «Кілька порад» (`Region/Tips`) тепер із двома пунктами і стоїть після «Змінити відповіді». Раніше: сіра картка з трьома пунктами 12 px; щоб розкривач і «Змінити відповіді» лишилися над закріпленою кнопкою, відступи «Ваша денна норма» зменшено, примітка — 13 px; кадр «Як ми це порахували» прокручено до розкривача
 - A-09 ілюстрація ON-01 — сірий блок `[ілюстрація]`; контакти підтримки ON-11 — `[текст не задано]`
 - A-10 цифрова клавіатура при введенні зросту/ваги не намальована (системна)
+- A-12 (D21) ON-12 зібрано з кадру ON-11: заголовок «Ваші дані про здоров'я», текст згоди `[текст не задано]`, текстове посилання на політику, основна «Погоджуюся»; номери позначок основного ряду після ON-01 зсунуто на +1
+- A-13 копія CT-01 після онбордингу — стан «Порожній день» без рядка тижня (Q35)
 
 ## Not represented
-- ON-11 «Продовжити без норми» → CT-01 у режимі без цілі — не з'єднано (Q1: режим не описаний)
+- ON-12 «Політика конфіденційності» — відкривається поза застосунком
+- Кінцеві копії CT-02 / CT-01 / CT-01 без норми не ведуть далі — основний потік на сторінці `02 — Daily Logging`
 - Варіанти-елементи без окремих кадрів: ON-02.SE, ON-03.SE, ON-04.SE, ON-05.SE, ON-07.SE, ON-08.SE (як ON-06.SE), ON-04.V-maintain, ON-05.V-male, ON-07.S2 «Ні», ON-08.V-gain, ON-09.V-maintain / V-gain / V-medical
 - Ланцюжок ON-02.SE → ON-08.SE та .SE → ON-11 (описані в специфікації)
 - Закриття колеса року свайпом / тапом поза шторкою (лише підпис)
@@ -36,3 +39,5 @@ None.
 2026-11-17 · D14–D16 update · PASS: ON-08 (Легко / Комфортно ✓ / Активно — недоступно), ON-09 обидва стани (1 750, −440, рядок про солодке), ON-10 «Комфортно», копія CT-01 з рядком тижня; номери натискань і стрілку 12 перевирівняно
 2026-11-17 · D17 · кадри онбордингу без змін; копія CT-01 отримала новий рядок тижня через компонент
 2026-11-17 · D18 · PASS: `Region/Tips` на обох кадрах ON-09; регіони перескладено в порядку специфікації; номери 12–15 і стрілки 12–13 перевирівняно; варіант ON-09.V-male не малювався (лише текст)
+2026-11-20 · D20, D21 · PASS: ON-12 вставлено другим кадром основного ряду (кадри й ряди нижче зсунуто на 470 px; позначки 2–16 → 3–17, підписи узгоджено); ON-11 ×3 з'єднано з копією CT-01 без норми; копію CT-01 «після онбордингу» замінено на перший день без рядка тижня («Перейти до щоденника» переспрямовано); підпис ON-09 оновлено під картки «Як ваша норма стане точнішою» і «Кілька порад». 0 зв'язків на іншу сторінку, 0 відсутніх цілей
+2026-11-20 · D22 · PASS: `Region/Accuracy` прибрано з обох кадрів ON-09; регіони нижче піднято на 180 px (у розгорнутому кадрі — вміст вище опущено), позначки 13 і 15 і стрілку 13 перенесено; підпис ON-09 оновлено
