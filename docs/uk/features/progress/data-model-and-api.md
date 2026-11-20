@@ -13,7 +13,7 @@
 | `CalorieEstimate` | `calculation-model.md` §6 | незмінний запис: `model_version`, `inputs`, BMR, PAL, TDEE, дефіцит, `target_kcal`, `created_at` | **історія цілей є**; бракує локальної дати дії |
 | `WeightEntry` | `onboarding-questionnaire.md` §4 | `measured_at`, `kg`, `source` | у Прогресі v1 не використовується |
 | `FoodEntry` | `adaptive-personalization.md` §2 | `logged_at`, `meal`, `kcal`, `source`, `edited` | **недостатньо**: немає Б/В/Ж, кількості, одиниці, `food_id`, локальної дати, ознаки видалення |
-| `DayLog` | `adaptive-personalization.md` §2 | `date, entries_count, kcal_total, meals_covered, user_marked_complete?, fasting_marked?` | концепція; пропонуємо **не зберігати**, а обчислювати (= `DaySummary`, §3) |
+| `DayLog` | `adaptive-personalization.md` §2 | `date, entries_count, kcal_total, meals_covered, user_marked_complete?, fasting_marked?` | концепція; одне означення повного запису для Прогресу й двигуна (PR-D16); пропонуємо **не зберігати**, а обчислювати (= `DaySummary`, §3) |
 | `GoalChange` | `adaptive-personalization.md` §2 | `at, goal, pace, goal_weight` | дублює `CalorieEstimate` для цілей Прогресу; не потрібна |
 
 Цілей Б/В/Ж немає ніде (рішення PR-D1: не вводимо). Позначки «день завершено» немає (рішення PR-D2: не вводимо; `user_marked_complete` лишається невикористаним).
@@ -58,7 +58,19 @@
 |---|---|---|
 | `tracking_start_date` | date | локальна дата завершення онбордингу; найраніший період у Прогресі; дні до неї — `before_start` |
 
-### 2.4 Індекси (для серверного сховища)
+### 2.4 `DayAnswer` — відповідь про «малий» день (рішення PR-D21, нова сутність)
+
+| Поле | Тип | Призначення |
+|---|---|---|
+| `user_id` | UUID | |
+| `local_date` | date | день, про який питали |
+| `answer` | enum `all` («Так, це все») / `not_all` («Ні, не все») | змінює статус дня (`calculation-specification.md` §4.4, правило 6) |
+| `answered_at` | timestamp UTC | аудит; остання відповідь перемагає |
+| `kept_at` | timestamp UTC, nullable | лише для `not_all`: людина натиснула «Залишити так» — рядок дня більше не показується в картці «Перевірте записи» (рішення PR-D23). Статус дня не змінює |
+
+Запис `DayAnswer` видаляється, коли змінюються записи цього дня (`calculation-specification.md` §3, п. 3).
+
+### 2.5 Індекси (для серверного сховища)
 
 - `food_entry (user_id, local_date)` — вибірка періоду; включає видалені (для синхронізації).
 - `food_entry (user_id, id, version)` унікальний — ідемпотентність.
@@ -119,6 +131,7 @@ insights(current, previous, hasTarget, params) → Insight[]   (≤ 2)
 }
 ```
 (Масив `days` скорочено; повний — 7 днів тижня або всі дні місяця.)
+Кожен день також містить `usual_meals` (звична кількість прийомів на цей день), `usual_kcal` (звичні калорії), `reason`: `meals` | `not_all` | `low_kcal_pending` | `confirmed_low` і `needs_answer` (true для «малого» дня без відповіді за останні 7 днів), `in_check_card` (true, якщо день показується в картці «Перевірте записи»: `needs_answer`, або відповідь `not_all` без `kept_at` за останні 7 днів — тоді рядок у вигляді «Не враховуємо в середньому» з «Дописати їжу» / «Залишити так», PR-D23) (`calculation-specification.md` §4.4, рішення PR-D13, PR-D14, PR-D21). Модуль також отримує на вхід відповіді `DayAnswer`.
 
 **Представлення відсутніх даних:** `null` означає «немає даних / не рахується» і ніколи не замінюється нулем; `value: null` у середніх — «мало даних» (менше мінімуму днів). **Історична ціль:** `target_kcal` у кожному дні — ціль, що діяла того дня; поточна ціль окремо не передається.
 

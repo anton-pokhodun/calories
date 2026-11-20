@@ -1,7 +1,7 @@
 # Wireframes — docs/uk/product/onboarding-flow.md
 
 - Figma: https://www.figma.com/design/fBMPokQnQHUsG1G0KfOuJn (fileKey `fBMPokQnQHUsG1G0KfOuJn`, той самий файл, що й для базового потоку)
-- Device: 390 × 844 · Generated from spec SHA-256 e55787001cdb31616cc903c4f9216ec50fa46387d14a25253df6404a8f8f1779 on 2026-11-17 · updated to SHA-256 7d3d21ea4566f0d85603154dae07aba321d38be96c3e38f45c59492833f90ae6 (Handoff: PASS, iteration 05 — D14–D18)
+- Device: 390 × 844 · Generated from spec SHA-256 e55787001cdb31616cc903c4f9216ec50fa46387d14a25253df6404a8f8f1779 on 2026-11-17 · updated to SHA-256 7d3d21ea4566f0d85603154dae07aba321d38be96c3e38f45c59492833f90ae6 (Handoff: PASS, iteration 05 — D14–D18) · updated 2026-11-19 to SHA-256 09fa1d2517a4000b7e4c3e9f178f04baf0f11f73ca5563fa810de959b25a5702 (Handoff: PASS, iteration 06 — D19)
 - Page `05 - Onboarding Wireframes` (25 frames, 4 rows): Flow: Onboarding — main journey (lose weight) (14: ON-01 → … → ON-09 → копія CT-02) · Flow: Onboarding — edit answers · go to diary (3: ON-10, ON-06 редагування, копія CT-01) · Flow: Onboarding — safety answer (eating disorder) (2) · States: ON-03 · ON-04 · ON-11 (system-triggered) (6)
 - Components (page `03 - Components`, група «Onboarding», x ≈ 1000): `WF/Onboarding/Header` (Mode=Progress|Title), `WF/Onboarding/Option Card` (Default|Selected|Disabled), `WF/Onboarding/Option Row`, `WF/Onboarding/Check Row`, `WF/Onboarding/Chip`, `WF/Onboarding/Answer Row`; перевикористано `WF/Status Bar`, `WF/Button/Primary`, `WF/Button/Text`, `WF/Field`, `WF/Sheet/Header`
 - Prototype: 47 елементів із реакціями на сторінці 05 (13 переходів основного ряду, переходи між рядами, «‹» у 22 шапках = BACK); старт — «ON-01 Вітання» (flow «Onboarding (main journey)»)
@@ -15,7 +15,7 @@
 - A-06 ON-07 «Частота обрана» показано одразу як ціль переходу з ON-06 (стан «нічого не обрано» не малювався — відрізняється лише виділенням)
 - A-07 ON-09 «Як ми це порахували» показано прокрученим до розкривача; області «Ваша денна норма» й «Розбивка» — над шапкою (поза кадром)
 - A-08 розбивка ON-09 — смужка «норма від витрати» (≈80 %: 1 750 / 2 190)
-- A-11 картка «Кілька порад» (`Region/Tips`) — сіра картка з трьома пунктами 12 px; щоб розкривач і «Змінити відповіді» лишилися над закріпленою кнопкою, відступи «Ваша денна норма» зменшено, примітка — 13 px; кадр «Як ми це порахували» прокручено до розкривача
+- A-11 (оновлено 2026-11-19, D19) картка «Як ваша норма стане точнішою» (`Region/Accuracy`) — того самого стилю, що й «Кілька порад»; «Кілька порад» (`Region/Tips`) тепер із двома пунктами і стоїть після «Змінити відповіді». Раніше: сіра картка з трьома пунктами 12 px; щоб розкривач і «Змінити відповіді» лишилися над закріпленою кнопкою, відступи «Ваша денна норма» зменшено, примітка — 13 px; кадр «Як ми це порахували» прокручено до розкривача
 - A-09 ілюстрація ON-01 — сірий блок `[ілюстрація]`; контакти підтримки ON-11 — `[текст не задано]`
 - A-10 цифрова клавіатура при введенні зросту/ваги не намальована (системна)
 
@@ -31,6 +31,7 @@
 None.
 
 ## Last validation
+2026-11-19 · D19 · PASS: обидва кадри ON-09 — `Region/Estimate note` замінено на `Region/Accuracy`; порядок Target → Breakdown → Goal → Accuracy → How calculated → Edit → Tips; розкривач і «Змінити відповіді» над закріпленими кнопками; позначки 12, 14 і стрілку 12 перенесено. Специфікацію змінено разом із вайрфреймами, хеш — iteration 06
 2026-11-17 · PASS · 25 кадрів 390 × 844; кожен рядок Layout специфікації — `Region/…`; мін. шрифт 12; заглушок тексту компонентів не лишилося; підписи не накладаються. MINOR: ON-11 (19–20 елементів) і ON-01 (16) — менше 30 елементів, бо специфікація більше не визначає; специфікацію перевіряв її ж автор — рекомендується перегляд власником продукту.
 2026-11-17 · D14–D16 update · PASS: ON-08 (Легко / Комфортно ✓ / Активно — недоступно), ON-09 обидва стани (1 750, −440, рядок про солодке), ON-10 «Комфортно», копія CT-01 з рядком тижня; номери натискань і стрілку 12 перевирівняно
 2026-11-17 · D17 · кадри онбордингу без змін; копія CT-01 отримала новий рядок тижня через компонент
