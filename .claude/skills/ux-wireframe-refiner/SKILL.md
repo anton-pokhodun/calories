@@ -31,7 +31,7 @@ execute blindly — and the user, not this skill, makes the product decision.
 | "Would X be better?", "analyse this change", "what are the options for…" | **ANALYSE** (§3 Steps 0–4, stops at the proposal; nothing changes in Figma) |
 | "Yes, do it", "go with option B", answering a proposal | **IMPLEMENT** the approved proposal (§3 Steps 5–8) |
 | "Check the change", "validate the refinement" | **VALIDATE** (§3 Step 7 on the last change) |
-| "What changes are pending / what did we change?" | **STATUS** (read the change log, change nothing) |
+| "What changes are pending?" | **STATUS** (read the sidecar's *Pending in spec*, change nothing) |
 
 Several requested changes in one message → one proposal per independent change, one combined
 proposal for changes that affect each other. Target screen ambiguous → list candidates by ID and
@@ -43,25 +43,25 @@ by what the user sees, and ask.
 |---|---|---|
 | `<dir>/<stem>.md` | Spec — source of truth for behaviour, screens, states, decisions | requirements-validator (FIX) |
 | `<dir>/<stem>.validation.md` | Handoff: hash, status, defaults | requirements-validator |
-| `<dir>/<stem>.wireframes.md` | Sidecar: Figma link, device, assumptions, not represented, pending in spec | figma-wireframe-generator; this skill updates *Pending in spec*, *Not represented*, *Last validation* |
-| `<dir>/<stem>.ux-changes.md` | Change log: one `UXC-NN` entry per change — proposal, evidence, state table, decision, result | this skill |
+| `<dir>/<stem>.wireframes.md` | Sidecar: Figma link, device, assumptions, not represented, pending in spec | figma-wireframe-generator; this skill updates *Design assumptions*, *Pending in spec*, *Not represented*, *Last validation* |
 | `docs/**/research/*.md` | Prior pattern research (Mobbin analyses, comparisons) — read before researching anew | — |
 
 Never edit the spec or the validation file yourself. Behaviour changes reach the spec through
-`requirements-validator` RECORD DECISIONS (§3 Step 8). Formats: `references/change-proposal.md` §4.
+`requirements-validator` RECORD DECISIONS (§3 Step 8). There is no change-log file — what
+persists and where: `references/change-proposal.md` §4.
 
 References — read them when the step says so:
 `references/ux-evidence.md` (sources, research procedure, evidence tags, prevalence vs quality) ·
 `references/impact-and-state.md` (impact checklist, dependency tracing, state preservation, state
 transition table) · `references/change-proposal.md` (change levels, approval, proposal template,
-change log) · `references/refinement-validation.md` (Figma editing rules, post-change validation).
+where results live) · `references/refinement-validation.md` (Figma editing rules, post-change validation).
 Figma conventions (tools, naming, regions, overlays, transition marks, prototype wiring) are those
 of `figma-wireframe-generator/references/figma-structure.md` and `wireframe-principles.md` — follow
 them; do not invent a second convention.
 
 ## 3. Workflow
 
-**Step 0 — Inspect the project.** Find the spec, validation file, sidecar and change log; read the
+**Step 0 — Inspect the project.** Find the spec, validation file and sidecar; read the
 spec's screen cards, decisions and open questions for the screens involved; read prior research and
 any UX guidelines in `docs/`. Note existing skills. Load the Figma tool schemas in one `ToolSearch`
 call. Figma unavailable → you can still ANALYSE; say plainly that nothing was changed.
@@ -85,7 +85,7 @@ principles that actually apply; then the impact checklist A–F and the state tr
 from the app's real states. Trace every dependency into related screens.
 
 **Step 4 — Propose** (`change-proposal.md` §3). Moderate/major: write the UX Change Proposal into
-the reply (and as `UXC-NN` with status PROPOSED in the change log). If the evidence says the
+the reply only — it is not written to a file. If the evidence says the
 request would harm the experience, say so plainly and recommend the better option — but present
 the requested one fairly. Ask for approval with AskUserQuestion (§5); open questions that change
 the implementation are asked before implementing, one per call. Minor and unambiguous → state the
@@ -99,15 +99,16 @@ what must remain untouched. Snapshot the "before" (screenshots + read-only dump 
 components; propagate to every related screen and state; rewire reactions; re-screenshot after
 each logical step.
 
-**Step 7 — Validate, separately** (`refinement-validation.md` §4). Read back and compare with the
+**Step 7 — Validate, separately** (`refinement-validation.md` §4), after re-syncing the
+transition marks on every page touched (`figma-structure.md` §6a). Read back and compare with the
 approved proposal, not with your intentions: requested change, usability, state preservation,
 layout, flow integrity, scope control, plus the generator's checklist for the affected frames. Fix
 what preserves the approved intent; anything needing a decision → ask. Successful tool calls are
 not evidence.
 
-**Step 8 — Record and hand back.** Update the change log entry (IMPLEMENTED / VALIDATED, result,
-deviations). Minor visual change → done. Behaviour change → add it to the sidecar's
-*Approved assumptions / pending in spec* as `UXC-NN` and, unless the user chose "Figma only",
+**Step 8 — Record and hand back** (`change-proposal.md` §4). Result and deviations go into the
+reply. Minor visual change → done (a new design assumption → sidecar `A-NN`). Behaviour change →
+one line in the sidecar's *Pending in spec* and, unless the user chose "Figma only",
 run `requirements-validator` RECORD DECISIONS with the approved proposal as the product-owner
 decision (it then does FIX → VALIDATE). Until the spec contains the change, a wireframe UPDATE from
 the old spec would revert it — say so if the user declines the sync.
@@ -117,7 +118,7 @@ the old spec would revert it — say so if the user declines the sync.
 | Class | Example | Action |
 |---|---|---|
 | **Structural consequence** of the approved change | Search moved down → the toast that sat above the bottom panel must sit above the search too | Do it; list it in the proposal's scope |
-| **Design assumption** | Exact spacing, the keyboard-visible frame's sample text | Do it; record in the change log entry |
+| **Design assumption** | Exact spacing, the keyboard-visible frame's sample text | Do it; record as `A-NN` in the sidecar |
 | **Product decision** | Dropping a tab, removing an action, resetting entered data, adding a filter the spec lacks | Never silently; it is part of the proposal or an open question |
 
 A finding in research or "most apps do X" is evidence for a decision, never the decision. In doubt
@@ -143,7 +144,7 @@ first.
 
 ## 7. Report after every run (short, user's language)
 
-1. **Change** — `UXC-NN`, level, what was requested, what was decided.
+1. **Change** — level, what was requested, what was decided.
 2. **Evidence** — the 2–5 sources that carried the decision, tagged (`ux-evidence.md` §3).
 3. **Figma** — frames / components / overlays / reactions modified, added, archived; link only as
    returned by a tool or given by the user.
@@ -164,4 +165,4 @@ first.
   silently.
 - Frames were modified in place; unrelated screens unchanged (compared with the "before" dump).
 - Claims about Figma rest on read-back and screenshots.
-- The change log, sidecar and spec-sync status agree with what was actually done.
+- The sidecar and spec-sync status agree with what was actually done; no change log was written.

@@ -51,4 +51,4 @@ sources that disagree. Each is a question to the user (SKILL.md §5), not a gues
 from a CONDITIONAL Handoff are never drawn, nor anything reachable only through them.
 
 User approval to draw a blocked part under a stated interpretation: record it (who, what, date)
-in the sidecar under *Approved assumptions*; silence is not approval.
+in the sidecar under *Pending in spec*; silence is not approval.

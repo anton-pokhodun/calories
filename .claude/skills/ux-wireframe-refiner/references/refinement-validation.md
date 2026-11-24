@@ -40,6 +40,9 @@ override or detach only when the change is local.
   above it.
 - Prototype: re-point reactions on the moved element, remove reactions to removed targets, keep
   `BACK` where closing returns to the origin; re-check the flow starting point.
+- Transition marks are never moved by hand: after the last edit, re-sync them from their anchors
+  on every page touched (`figma-structure.md` §6a). A moved element whose ring did not follow is
+  a FAIL, not a cosmetic issue.
 - Removed frames go to `99 - Archive`, never deleted. Unrelated frames are not touched.
 - No new elements beyond the approved scope; structural consequences listed in the proposal are
   allowed; design assumptions are logged.
@@ -60,7 +63,8 @@ input disappearing without cause.
 toasts or the home indicator; safe areas respected; touch targets ≥ 44 pt; text ≥ 12 px; content
 still readable and the visible list portion sensible.
 **E. Flow integrity** — every reaction on the changed frames points to an existing frame; incoming
-reactions still land; arrows, badges and captions match the new positions; numbering per row still
+reactions still land; the re-sync reports 0 unanchored and 0 mismatched marks, and the
+screenshots show every ring on its element; captions match; numbering per row still
 consistent; dimmed backdrops match their parents.
 **F. Scope control** — diff against the "before" dump: only planned frames changed; no unrelated
 frame, component or reaction changed; no feature or behaviour introduced outside the proposal;

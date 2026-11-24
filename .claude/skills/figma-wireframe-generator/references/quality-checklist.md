@@ -28,7 +28,8 @@ screen shows and what is tappable · G8 the overview, if any, is compact and sma
 wireframes.
 
 **T. Transitions readable — second.**
-T1 every Actions row that leads to another frame has: tap-target ring + number on the element,
+T1 every Actions row that leads to another frame has: tap-target ring + number on the element
+(anchored and in place after the re-sync, `figma-structure.md` §6a — 0 unanchored, 0 mismatched),
 numbered arrow to the next frame (neighbours) or a named jump, caption `N · … →` · T2 every frame
 not reached by an arrow has an origin line `↳ from …` · T3 captions are one block under the frame,
 nothing overlaps another note, a frame-name label, a badge or a frame · T4 no spec IDs or long
@@ -76,5 +77,5 @@ survives two fixes (report it).
 ## 5. Reporting
 
 No report file: put the result in the reply (decision, frame counts, issues found / fixed /
-remaining with frame names, not-represented items) and refresh the sidecar's *Last validation* and
-*Not represented*. Issue IDs `WV-n` are only for the reply.
+remaining with frame names, not-represented items) and replace the sidecar's one-line *Last validation*
+and refresh *Not represented*. Issue IDs `WV-n` are only for the reply.

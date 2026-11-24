@@ -1,4 +1,4 @@
-# Change levels, approval, proposal, change log
+# Change levels, approval, proposal, where results live
 
 ## 1. Change levels
 
@@ -17,7 +17,7 @@ does not have is a new feature: say so and route it through the spec.
 | Level | Before Figma is touched |
 |---|---|
 | L1 | Implement directly when the result is unambiguous; one-line plan in the reply |
-| L2 | Analysis + proposal + approval — unless the user explicitly authorised immediate execution in this request ("just do it", "no need to ask"); then still write the proposal into the change log and the reply |
+| L2 | Analysis + proposal + approval — unless the user explicitly authorised immediate execution in this request ("just do it", "no need to ask"); then still write the proposal into the reply |
 | L3 | Proposal + explicit approval of that proposal, always |
 
 Approval of one change does not extend to the next. If implementation reveals something the
@@ -42,22 +42,18 @@ proposal did not cover that needs a decision, stop and ask.
 
 Keep it readable in one screen or two: tables over prose, no padding, no generic UX lectures.
 
-## 4. Change log `<dir>/<stem>.ux-changes.md`
+## 4. Where results live — no change log
 
-```markdown
-# UX changes — <spec path>
-Figma: <link> · last entry UXC-NN
+There is no change-log file. The proposal, evidence and validation result live in the
+conversation; git keeps the history. What must persist goes to its owner:
 
-## UXC-01 — <short title> · L2 · VALIDATED · spec: SYNCED | PENDING | NOT NEEDED
-- Requested (<date>): <request in the user's words>
-- Decision: <approved option> — approved by the user on <date> ("<quote>")
-- Evidence: [G] … <link> · [O] … <links> · [I] …
-- States: <the state transition table or its rows in one line each>
-- Scope: changed <frames/components/reactions> · unchanged <…>
-- Assumptions: <A-level choices made during implementation>
-- Result: <validation outcome, deviations from the proposal, not represented>
-```
+| What | Where |
+|---|---|
+| Approved behaviour change | The spec, via `requirements-validator` RECORD DECISIONS — as current behaviour, replacing the old text |
+| Product-level decision | `docs/product/decisions.md`, in the same change |
+| Drawn but not yet in the spec | Sidecar *Pending in spec*, one line; removed once the spec has it |
+| Design assumption made while implementing | Sidecar *Design assumptions* `A-NN` |
+| Lasting research worth reusing | `docs/**/research/` — only if the user asks or it will clearly be reused |
 
-Statuses: PROPOSED → APPROVED → IMPLEMENTED → VALIDATED, or REJECTED / SUPERSEDED (by UXC-NN).
-Entries are appended, never renumbered; rejected proposals stay (they record why an option was
-not chosen). Node IDs are not stored — frames are found by name.
+No `UXC-NN` IDs: the decision ID in the spec is the stable reference. Rejected options are not
+recorded.

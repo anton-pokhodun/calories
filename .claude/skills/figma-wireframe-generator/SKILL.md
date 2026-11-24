@@ -107,7 +107,7 @@ Only for something the spec does not say and the Handoff does not default. AskUs
 question per call, 2–4 options from the spec or its research, recommended first, screens explained
 by ID **and** by what the user sees, in the user's language. An answer that changes behaviour
 belongs in the spec: tell the user to record it through `requirements-validator`; draw from the
-answer meanwhile only if the user says so, and list it in the sidecar as *pending in spec*.
+answer meanwhile only if the user says so, and list it in the sidecar under *Pending in spec*.
 
 ## 6. Never invent requirements
 
@@ -143,6 +143,8 @@ separate UI-design phase.
 - Flow pages show phone screens side by side in journey order, not boxes and arrows; the Overview page is one compact screen.
 - Every screen, overlay and layout-changing state in scope is a full phone frame with every Layout
   row of the spec as a `Region/`; persistent elements are present wherever the spec says.
+- Every ring, badge and arrow is anchored to its element and re-synced after the last edit
+  (`figma-structure.md` §6a).
 - Every tap that leads to another frame is marked (ring · number · arrow · caption); no text
   collides with Figma's frame-name labels; no spec IDs on the canvas except in frame names.
 - Nothing drawn without a source; no product decision resolved by you.

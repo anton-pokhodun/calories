@@ -71,5 +71,5 @@ Required for every moderate or major change; use the app's real states and real 
 | Session items + total in the «Додано» panel | 2 items · 254 kcal | Preserved, panel stays visible above the field | Per spec: last item removed / «Готово» | Persistent element per spec §5 |
 | Keyboard | Hidden until the field is tapped (Q5) | Same; when open, field and results sit above it | Field loses focus | Spec Q5 default |
 
-The table goes into the proposal and the change log; the validation later checks each row in
+The table goes into the proposal; the validation later checks each row in
 Figma (`refinement-validation.md` §4 C).

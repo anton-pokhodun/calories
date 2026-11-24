@@ -17,13 +17,10 @@ from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 # ---------------------------------------------------------------- параметри
-MEALS = ("breakfast", "lunch", "dinner", "snack")
 NUTRIENTS = ("protein_g", "carbs_g", "fat_g")
 
 P = {
     "CORRIDOR_KCAL": 100,          # calculation-model.md §4.6 (D15/Q31): коридор ціль ± 100
-    "MEALS_FALLBACK": 3,           # PR-D13: поки немає історії — ≥ 3 з 4 прийомів
-    "MEALS_MIN": 2,                # звична кількість прийомів не менша за 2
     "USUAL_WINDOW_DAYS": 14,       # вікно «звичного» (попередні 14 днів)
     "USUAL_MIN_DAYS": 7,           # скільки днів у вікні потрібно, щоб «звичне» було відоме
     "LOW_KCAL_SHARE": 0.5,         # PR-D14: менше половини звичних калорій — неповний запис
@@ -54,8 +51,7 @@ def rnd1(x: float) -> float:
 @dataclass
 class FoodEntry:
     id: str
-    local_date: date              # календарна дата користувача в момент запису (незмінна)
-    meal: str
+    local_date: date              # календарна дата користувача в момент запису (незмінна); прийому немає (Q42 / PR-D25)
     kcal: float | None            # знімок на момент запису
     protein_g: float | None = None
     carbs_g: float | None = None
@@ -77,15 +73,13 @@ class Day:
     date: date
     status: str
     entries: int = 0
-    meals: int = 0
     kcal: float | None = None
     target: int | None = None
     diff: int | None = None       # лише для complete з ціллю; = rnd(kcal) − target
     band: str | None = None
     macros: dict = field(default_factory=dict)   # nutrient → float | None (None = неповні дані)
-    usual_meals: int | None = None   # звична кількість прийомів на цей день
     usual_kcal: float | None = None  # звичні калорії (медіана повних днів за 14 днів) або ціль
-    reason: str | None = None        # для неповного: "meals" | "low_kcal"
+    reason: str | None = None        # для неповного: "low_kcal_pending" | "not_all"; для повного «малого» — "confirmed_low"
 
 
 # ---------------------------------------------------------------- шар 1: день
@@ -95,7 +89,7 @@ def valid_entries(entries: list[FoodEntry]) -> list[FoodEntry]:
         if e.id not in latest or e.version > latest[e.id].version:
             latest[e.id] = e
     return [e for e in latest.values()
-            if not e.deleted and e.kcal is not None and e.kcal >= 0 and e.meal in MEALS]
+            if not e.deleted and e.kcal is not None and e.kcal >= 0]
 
 
 def target_for(d: date, estimates: list[CalorieEstimate]) -> int | None:
@@ -126,7 +120,7 @@ def classify_all(entries: list[FoodEntry], estimates, today: date, start: date, 
     d = start
     while d <= today:
         es = [e for e in entries if e.local_date == d]
-        day = Day(d, NO_DATA, entries=len(es), meals=len({e.meal for e in es}), target=target_for(d, estimates))
+        day = Day(d, NO_DATA, entries=len(es), target=target_for(d, estimates))
         if es:
             day.kcal = sum(e.kcal for e in es)
             for n in NUTRIENTS:
@@ -134,19 +128,12 @@ def classify_all(entries: list[FoodEntry], estimates, today: date, start: date, 
                 day.macros[n] = None if any(v is None for v in vals) else sum(vals)
         win = [days[d - timedelta(days=i)] for i in range(1, P["USUAL_WINDOW_DAYS"] + 1)
                if d - timedelta(days=i) in days]
-        logged = [x for x in win if x.entries > 0]
-        if len(logged) >= P["USUAL_MIN_DAYS"]:
-            day.usual_meals = min(4, max(P["MEALS_MIN"], int(median([x.meals for x in logged]))))
-        else:
-            day.usual_meals = P["MEALS_FALLBACK"]
         comp = [x.kcal for x in win if x.status == COMPLETE]
         day.usual_kcal = median(comp) if len(comp) >= P["USUAL_MIN_DAYS"] else day.target
         if d == today:
             day.status = IN_PROGRESS
         elif not es:
             day.status = NO_DATA
-        elif day.meals < day.usual_meals:
-            day.status, day.reason = PARTIAL, "meals"
         elif day.target is not None and day.usual_kcal is not None and day.kcal < P["LOW_KCAL_SHARE"] * day.usual_kcal:
             a = answers.get(d)
             if a == "all":                       # «Так, це все» — день рахується
@@ -292,26 +279,25 @@ def insights(cur: Period, prev: Period | None, has_target: bool) -> list[tuple[s
 
 # ---------------------------------------------------------------- генератор даних
 RATIO = {"protein_g": (0.22, 4), "carbs_g": (0.48, 4), "fat_g": (0.30, 9)}
-SPLIT = {"breakfast": 0.25, "lunch": 0.40, "dinner": 0.35}
+DAY3 = (0.25, 0.40, 0.35)   # частки ккал між записами дня (лише щоб розкласти суму на кілька записів)
 _seq = [0]
 
 
-def make_day(d: date, kcal: float, meals=("breakfast", "lunch", "dinner"),
+def make_day(d: date, kcal: float, split=DAY3,
              no_macro_kcal: float = 0, tilt: float = 0.0) -> list[FoodEntry]:
-    """День з `kcal` ккал, розкладених по прийомах; `no_macro_kcal` — швидке додавання без Б/В/Ж;
+    """День з `kcal` ккал, розкладених на кілька записів (частки `split`; прийомів немає — PR-D25); `no_macro_kcal` — швидке додавання без Б/В/Ж;
     `tilt` зсуває частку вуглеводів на користь білків (для різноманітності прикладів)."""
     out = []
     base = kcal - no_macro_kcal
-    w = {m: SPLIT.get(m, 0.15) for m in meals}
-    tot = sum(w.values())
-    for m in meals:
+    tot = sum(split)
+    for w in split:
         _seq[0] += 1
-        k = base * w[m] / tot
+        k = base * w / tot
         pr, cr, fr = 0.22 + tilt, 0.48 - tilt, 0.30
-        out.append(FoodEntry(f"e{_seq[0]}", d, m, k, rnd1(k * pr / 4), rnd1(k * cr / 4), rnd1(k * fr / 9)))
+        out.append(FoodEntry(f"e{_seq[0]}", d, k, rnd1(k * pr / 4), rnd1(k * cr / 4), rnd1(k * fr / 9)))
     if no_macro_kcal:
         _seq[0] += 1
-        out.append(FoodEntry(f"e{_seq[0]}", d, "snack", no_macro_kcal))   # CT-08: лише ккал
+        out.append(FoodEntry(f"e{_seq[0]}", d, no_macro_kcal))   # CT-08: лише ккал
     return out
 
 
@@ -329,15 +315,15 @@ def week_nov9():
     e = []
     e += make_day(D("2026-11-09"), 1820)
     e += make_day(D("2026-11-10"), 1690, tilt=0.03)
-    e += make_day(D("2026-11-11"), 640, meals=("breakfast", "lunch"))           # частковий
+    e += make_day(D("2026-11-11"), 640, split=(0.25, 0.40))                      # «малий» день
     e += make_day(D("2026-11-12"), 1910, no_macro_kcal=150)                     # без Б/В/Ж
     e += make_day(D("2026-11-13"), 1740, tilt=0.02)
     #            2026-11-14 — немає записів
-    e += make_day(D("2026-11-15"), 2050, meals=("breakfast", "lunch", "dinner", "snack"))
+    e += make_day(D("2026-11-15"), 2050, split=(0.25, 0.40, 0.35, 0.15))
     prev = []
     for d, k in [("02", 1980), ("03", 2010), ("04", 1890), ("06", 2050), ("07", 1870)]:
         prev += make_day(D(f"2026-11-{d}"), k, tilt=0.03)
-    prev += make_day(D("2026-11-05"), 900, meals=("lunch",))                    # частковий
+    prev += make_day(D("2026-11-05"), 900, split=(0.40,))                          # «малий» день
     #            2026-11-08 — немає записів
     return e, prev
 
@@ -360,7 +346,7 @@ def month_oct():
         elif t == "q":
             e += make_day(d, k, no_macro_kcal=200)
         elif t == "p":
-            e += make_day(d, k, meals=("breakfast", "lunch"))
+            e += make_day(d, k, split=(0.25, 0.40))
     return e
 
 
@@ -386,12 +372,12 @@ def fmt(x, nd=2):
 def show(title: str, per: Period, prev: Period | None = None, has_target=True, days=True):
     print(f"\n### {title}")
     if days:
-        print("| Дата | Статус | Прийомів | ккал (сума) | Показ ккал | Ціль | Різниця | Діапазон | Б, г | В, г | Ж, г |")
+        print("| Дата | Статус | Записів | ккал (сума) | Показ ккал | Ціль | Різниця | Діапазон | Б, г | В, г | Ж, г |")
         print("|---|---|---|---|---|---|---|---|---|---|---|")
         for d in per.days:
             m = d.macros
             show_k = rnd(d.kcal) if d.kcal is not None else "—"
-            print(f"| {UA_DOW[d.date.weekday()]} {d.date.isoformat()} | {ST_UA[d.status]} | {d.meals} | "
+            print(f"| {UA_DOW[d.date.weekday()]} {d.date.isoformat()} | {ST_UA[d.status]} | {d.entries} | "
                   f"{fmt(d.kcal)} | {show_k} | {fmt(d.target)} | {fmt(d.diff)} | {BD_UA[d.band]} | "
                   + " | ".join(fmt(m.get(n), 1) if n in m else "—" for n in NUTRIENTS) + " |")
     c = per.counts
@@ -440,8 +426,9 @@ def main(check_only=False):
         import io
         sys.stdout = io.StringIO()
     e, prev_e = week_nov9()
-    tc02 = build("week", D("2026-11-09"), e + prev_e, OLENA, TODAY, START)
-    prev = build("week", D("2026-11-02"), e + prev_e, OLENA, TODAY, START)
+    hist0 = month_sep() + month_oct()   # історія Олени з вересня: «звичні калорії» для листопадових днів (PR-D14)
+    tc02 = build("week", D("2026-11-09"), hist0 + e + prev_e, OLENA, TODAY, START)
+    prev = build("week", D("2026-11-02"), hist0 + e + prev_e, OLENA, TODAY, START)
     print("## Тест-кейси (перераховано calculation_reference.py)")
 
     # TC-01 повний тиждень
@@ -471,9 +458,9 @@ def main(check_only=False):
     # TC-09 поточний неповний день
     cur = []
     cur += make_day(D("2026-11-16"), 1760)
-    cur += make_day(D("2026-11-17"), 600)                                  # «малий» день: 3 прийоми, 600 ккал
-    cur += make_day(D("2026-11-18"), 820, meals=("breakfast", "lunch"))
-    hist = e + prev_e + cur
+    cur += make_day(D("2026-11-17"), 600)                                  # «малий» день: 3 записи, 600 ккал
+    cur += make_day(D("2026-11-18"), 820, split=(0.25, 0.40))
+    hist = hist0 + e + prev_e + cur
     tc09 = build("week", D("2026-11-16"), hist, OLENA, TODAY, START)
     show("TC-09 Поточний тиждень, сьогодні середа 18 листопада (вівторок 17 — «малий» день без відповіді)", tc09, tc02)
     d17 = classify_all(valid_entries(hist), OLENA, TODAY, START)[D("2026-11-17")]
@@ -484,28 +471,28 @@ def main(check_only=False):
     print(f"\n- Після відповіді «Ні, не все»: Вт 17 — {ST_UA[tc15n.days[1].status]}; повні дні {tc15n.counts[COMPLETE]} з {tc15n.counts[COMPLETE]+tc15n.counts[PARTIAL]+tc15n.counts[NO_DATA]}")
     # TC-11 видалені й дубльовані записи
     dup = make_day(D("2026-10-05"), 1800)
-    dup2 = [FoodEntry(dup[0].id, dup[0].local_date, dup[0].meal, dup[0].kcal + 100, version=2,
+    dup2 = [FoodEntry(dup[0].id, dup[0].local_date, dup[0].kcal + 100, version=2,
                       protein_g=dup[0].protein_g, carbs_g=dup[0].carbs_g, fat_g=dup[0].fat_g),   # редагування
-            FoodEntry("x-del", D("2026-10-05"), "snack", 300, 5, 40, 12, deleted=True)]           # видалено
+            FoodEntry("x-del", D("2026-10-05"), 300, 5, 40, 12, deleted=True)]           # видалено
     d11 = day_summary(D("2026-10-05"), valid_entries(dup + dup2 + [dup[1]]), OLENA, TODAY, START)
-    print(f"\n### TC-11 Дубль, редагування, видалення (5 жовтня)\n- Записів після очищення {d11.entries}; ккал {fmt(d11.kcal)} (1 800 + 100 за редагування; видалений перекус 300 не враховано; дубль lunch — один раз)")
+    print(f"\n### TC-11 Дубль, редагування, видалення (5 жовтня)\n- Записів після очищення {d11.entries}; ккал {fmt(d11.kcal)} (1 800 + 100 за редагування; видалений запис 300 не враховано; дубль — один раз)")
     # TC-12 без норми
-    tc12 = build("week", D("2026-11-09"), e + prev_e, [CalorieEstimate("ce0", START, 1, None)], TODAY, START)
+    tc12 = build("week", D("2026-11-09"), hist0 + e + prev_e, [CalorieEstimate("ce0", START, 1, None)], TODAY, START)
     show("TC-12 Користувач без норми (ON-11), дані TC-02", tc12, prev, has_target=False, days=False)
-    # TC-13 людина, що їсть двічі на день (обід і вечеря), облік з 1 вересня
+    # TC-13 людина, що їсть двічі на день, облік з 1 вересня: кількість записів на повноту не впливає (PR-D25)
     two = []
     for i in range(21):
-        two += make_day(date(2026, 9, 1) + timedelta(days=i), 1700, meals=("lunch", "dinner"))
+        two += make_day(date(2026, 9, 1) + timedelta(days=i), 1700, split=(0.40, 0.35))
     st13 = classify_all(valid_entries(two), OLENA, D("2026-09-22"), D("2026-09-01"))
-    print("\n### TC-13 Двічі на день (обід + вечеря), облік з 1 вересня")
-    print("| Дні | Звична к-сть прийомів | Статус |\n|---|---|---|")
-    print(f"| 1–7 вересня | {st13[D('2026-09-01')].usual_meals} (історії ще немає) | {ST_UA[st13[D('2026-09-07')].status]} |")
-    print(f"| 8–21 вересня | {st13[D('2026-09-08')].usual_meals} | {ST_UA[st13[D('2026-09-08')].status]} |")
-    # TC-14 «малий» день: три прийоми, але 700 ккал при звичних ≈1 800
+    print("\n### TC-13 Двічі на день (2 записи по 1 700 ккал на день), облік з 1 вересня")
+    print("| Дні | Записів на день | Статус |\n|---|---|---|")
+    print(f"| 1–7 вересня (історії ще немає) | {st13[D('2026-09-01')].entries} | {ST_UA[st13[D('2026-09-07')].status]} |")
+    print(f"| 8–21 вересня | {st13[D('2026-09-08')].entries} | {ST_UA[st13[D('2026-09-08')].status]} |")
+    # TC-14 «малий» день: три записи, але 700 ккал при звичних ≈1 800
     low = month_sep() + make_day(D("2026-10-01"), 700)
     st14 = classify_all(valid_entries(low), OLENA, D("2026-10-02"), D("2026-09-01"))
     d14 = st14[D("2026-10-01")]
-    print(f"\n### TC-14 Мало калорій при звичній кількості прийомів (1 жовтня)\n- Записано {rnd(d14.kcal)} ккал у {d14.meals} прийоми; звичні калорії {rnd(d14.usual_kcal)} (медіана повних днів за 14 днів), поріг {rnd(0.5 * d14.usual_kcal)} → **{ST_UA[d14.status]}** (причина: менше половини звичного; поки людина не відповіла)")
+    print(f"\n### TC-14 Мало калорій за звичної кількості записів (1 жовтня)\n- Записано {rnd(d14.kcal)} ккал у {d14.entries} записи; звичні калорії {rnd(d14.usual_kcal)} (медіана повних днів за 14 днів), поріг {rnd(0.5 * d14.usual_kcal)} → **{ST_UA[d14.status]}** (причина: менше половини звичного; поки людина не відповіла)")
     tz = tz_demo()
     sys.stdout = out
 
@@ -524,9 +511,8 @@ def main(check_only=False):
     assert d11.kcal == 1900
     assert insights(tc12, prev, False) == []
     assert tz["t2"] == (D("2026-11-11"), D("2026-11-10")) and tz["t3"][0] == D("2026-11-12")
-    assert oct_.counts[COMPLETE] == 24 and oct_.counts[NO_DATA] == 5 and oct_.counts[PARTIAL] == 2
-    assert [st13[D("2026-09-%02d" % i)].status for i in range(1, 8)] == [PARTIAL] * 7
-    assert all(st13[D("2026-09-%02d" % i)].status == COMPLETE for i in range(8, 22))
+    assert oct_.counts[COMPLETE] == 25 and oct_.counts[NO_DATA] == 5 and oct_.counts[PARTIAL] == 1   # PR-D25: 22.10 (980 ккал) тепер повний
+    assert all(st13[D("2026-09-%02d" % i)].status == COMPLETE for i in range(1, 22))   # PR-D25: без правила прийомів
     assert d14.status == PARTIAL and d14.reason == "low_kcal_pending"
     print("Усі твердження виконано." if check_only else "\n(твердження перевірено)")
     return dict(tc02=tc02, prev=prev, oct=oct_, sep=sep, tc09=tc09, ins_oct=ins_oct)

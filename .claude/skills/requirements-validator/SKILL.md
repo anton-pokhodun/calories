@@ -54,9 +54,14 @@ list them and ask; do not validate research notes or prompts unless named as the
 ## 2. Files
 
 For a spec `<dir>/<stem>.md` the validator keeps **one** file: `<dir>/<stem>.validation.md`
-(Handoff, issues, decisions, latest report, last fix log, history — rewritten in place). There are
-no per-iteration reports, fix logs or snapshots. The spec is edited only by FIX, and only to
-correct it.
+(Handoff, open issues, pending decisions — the current state only, rewritten in place). Reports,
+fix logs and history are not stored: they go into the reply, and git keeps the history. The spec
+is edited only by FIX, and only to correct it.
+
+**The spec describes only the current behaviour.** When a decision replaces an earlier one, the
+earlier text is rewritten or deleted — no strikethrough, no "замінено QNN", no "було …", no
+"лишається для історії". Decision rows state the decision, not its story; research and
+alternatives are cited by a link to `docs/**/research/`, not retold. No RV or UXC tags in the spec.
 
 References — read them when the step says so:
 
@@ -64,7 +69,7 @@ References — read them when the step says so:
 - `references/validation-criteria.md` — V1–V8, the evidence rule, the Figma-impact test.
 - `references/severity-levels.md` — BLOCKER / HIGH / MEDIUM / LOW.
 - `references/figma-readiness.md` — Definition of Done, readiness assessment, PASS / CONDITIONAL / FAIL.
-- `references/validation-file.md` — file layout, issue IDs and statuses, reconciliation, report and fix-log format.
+- `references/validation-file.md` — file layout, issue IDs and statuses, reconciliation, report and fix-log format (in the reply).
 
 ## 3. Never invent requirements
 
@@ -99,8 +104,8 @@ Inferred and Assumption: Assumption.
 8. Reconcile with the existing validation file (`validation-file.md`).
 9. Decide PASS / CONDITIONAL / FAIL and fill the readiness assessment (`figma-readiness.md`).
 10. Write `<stem>.validation.md`: Handoff first (including the **Format** verdict and the parts
-    blocked for wireframes), then Issues, Decisions, Latest report, History. Do not modify the spec.
-11. Reply briefly: decision, counts, blockers one line each, decisions needed, suggested next
+    blocked for wireframes), then Issues and Decisions. Do not modify the spec.
+11. Reply with the report (`validation-file.md`): decision, counts, findings, blockers, decisions needed, suggested next
     operation. If decisions are needed, start asking them (§1a). On PASS, say the spec is ready for
     `figma-wireframe-generator` and name the file.
 
@@ -110,11 +115,11 @@ write explanations in the user's language.
 ## 5. FIX (edits the spec)
 
 ### 5.1 Preconditions
-A validation file with a latest report exists, and the spec's SHA-256 equals the one in it. If it
-differs, run VALIDATE first.
+A validation file exists, and the spec's SHA-256 equals the one in it. If it differs, run
+VALIDATE first.
 
 ### 5.2 Steps
-1. Read the file's Latest report and the spec.
+1. Read the file's Issues and Decisions and the spec.
 2. Candidates, BLOCKER → LOW: OPEN issues with resolution type Automatic; NEEDS_DECISION issues
    whose answer is recorded in Decisions (the recorded decision is now the source of truth).
 3. Re-check the gate (§5.3) for each. Gate fails → no edit; set NEEDS_DECISION and write the
@@ -122,10 +127,9 @@ differs, run VALIDATE first.
 4. Apply the **minimal** edit (§5.4).
 5. Make unresolved decisions visible: if the spec has an open-questions section, every
    NEEDS_DECISION issue appears there (reuse an existing question ID, otherwise append the next
-   number tagged with the issue ID, e.g. `Q8 [RV-012]`), each with the default the wireframes
-   should draw meanwhile. No scattered TODO markers.
-6. Set edited issues to **FIXED** (never VERIFIED). Replace the file's *Last fix log* with this
-   run's changes (before → after, source of truth), update Issues and History.
+   number), each with the default the wireframes should draw meanwhile. No scattered TODO markers.
+6. Set edited issues to **FIXED** (never VERIFIED) and update Issues; the fix log goes into the
+   reply.
 7. If any edit was made, run VALIDATE immediately (§1a), then reply once: what changed, the
    validation result, and — if needed — the interactive questions. If no edit was made, say so.
 
@@ -150,7 +154,10 @@ specified.
 ### 5.4 Editing rules
 Write in the document's language and conventions. Change only the sentences, rows or diagram
 nodes involved; when a fact is stated in several places, update all so they agree; fix obsolete
-cross-references; preserve intent and approved decisions.
+cross-references; preserve intent and approved decisions. A new decision that replaces an earlier
+one rewrites the earlier row and every statement of it to the current behaviour (§2) — it is not
+appended next to a struck-through original. A replaced decision ID that nothing else references
+is deleted; IDs are not reused.
 
 ## 6. RECORD DECISIONS
 Record each answer in Decisions (issue ID, question ID, decision as stated, who decided as the
@@ -163,7 +170,7 @@ Repeat VALIDATE → (OPEN Automatic issues) FIX → VALIDATE. When only NEEDS_DE
 ask them (§1a), record, FIX, VALIDATE. Stop when: PASS; every issue blocking PASS is
 NEEDS_DECISION; only inventing requirements could continue; no progress (a FIX made no edits, or
 the same issue was FIXED and found again in two consecutive validations); or the user stops. No
-iteration limit. At the end give the History and any unanswered questions.
+iteration limit. At the end give a short summary of the runs and any unanswered questions.
 
 ## 8. Scope protection
 Does not: generate wireframes; modify Figma; make visual design decisions; introduce features;
@@ -176,5 +183,6 @@ open decisions are escalated.
 - No Assumption or Product decision was written into the spec as fact.
 - Severities follow `severity-levels.md`; nothing inflated.
 - The validation file is current: Handoff matches the spec's hash, no issue went OPEN/FIXED →
-  resolved without a validation, NEEDS_DECISION items are visible.
-- VALIDATE did not change the spec.
+  resolved without a validation, NEEDS_DECISION items are visible, no resolved issues or history
+  kept in it.
+- VALIDATE did not change the spec; FIX left no struck-through, "замінено" or RV/UXC traces in it.

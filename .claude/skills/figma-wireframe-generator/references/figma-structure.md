@@ -123,18 +123,42 @@ For every Actions row that moves the user to another frame, make it readable **a
    typing) may use the nearest element as a stand-in — say so in the caption.
 6. Never wire or draw a transition the spec's Actions tables do not contain.
 
+### 6a. Marks follow their element — anchor, re-sync, check
+
+Marks are separate `Note/` layers, so they do not move with the element by themselves. Every
+change that can move or resize an element (relayout, component edit, text change, inserted or
+removed region, frame resize) is followed by a re-sync — never by moving marks by hand.
+
+1. **Anchor.** When a mark is created, store the tapped node on it:
+   `mark.setSharedPluginData('wf', 'target', tappedNode.id)` on `Note/Tap target N`,
+   `Note/Badge N` and `Note/Arrow N` (the arrow also stores `'dest'` = the destination frame id).
+   A mark without an anchor is a defect.
+2. **Re-sync** (one retry-safe `use_figma` per page, at the end of every task that edited frames
+   or components): for each `Note/` mark with an anchor, read the target's `absoluteBoundingBox`
+   and recompute — ring = target box + 4 px on each side; badge = ring's top-right corner; arrow
+   = from the source frame's right edge to the destination frame's left edge, at the ring's
+   vertical centre clamped inside the frame, its badge above it. Convert to the mark's parent
+   coordinates. Target gone or hidden → delete the mark and its badge/arrow and report it; target
+   now in another frame → report, do not guess.
+3. **Check** (part of validation): every mark's bounds equal the recomputed bounds within 1 px;
+   no ring without an anchor; no ring whose target has no reaction. Return the counts
+   (`marks: n, moved: n, removed: n, unanchored: n`) — `unanchored > 0` or a mismatch fails T1.
+4. **Legacy marks** without an anchor (drawn before this rule): anchor each to the reacting
+   element it overlaps most within the same frame and with the same number in the caption; if
+   none or several match, list it for the user instead of guessing.
+
 ## 7. Build order
 
 1. Components (return IDs) → 2. row 1, one or two frames per call, regions from the spec; **screenshot
 the row and look at it** → 3. branch rows → 4. system-state frames (`States: <ScreenID>` row under the screen's row) → 5. transition marks,
-reactions, captions → 6. optional overview, page order → 7. validation.
+reactions, captions → 6. optional overview, page order → 7. mark re-sync (§6a) → 8. validation.
 Every call retry-safe, returns created IDs and counts; `placeholder = true` while building.
 
 ## 8. Efficiency
 
 Batch related work per call; fan out multi-page work as parallel calls (one `setCurrentPageAsync`
-each); measure large returns. Write element finders by name (`Region/…`, `Quick add (+)`) so marks
-and reactions can be rebuilt after a relayout.
+each); measure large returns. Write element finders by name (`Region/…`, `Quick add (+)`) so
+reactions can be rebuilt after a relayout; marks are re-placed from their anchors (§6a).
 
 ## 9. RELAYOUT of an existing file
 
@@ -145,14 +169,14 @@ and reactions can be rebuilt after a relayout.
    delete (with the user's say-so) diagram cards.
 3. Frames moved between pages lose links — move system states only, after checking nothing targets
    them. Keep the overview to one screen of chips.
-4. Rebuild the transition marks (§6) and captions; validate with screenshots.
+4. Re-sync the transition marks from their anchors (§6a), rebuild captions; validate with screenshots.
 
 ## 10. Sidecar `<dir>/<stem>.wireframes.md` (the only file this skill writes)
 
 ```markdown
 # Wireframes — <spec path>
 - Figma: <link returned by the tool>
-- Device: 390 × 844 · Generated from spec SHA-256 <hash> on <date> · Handoff: <status>, iteration NN
+- Device: 390 × 844 · Matches spec SHA-256 <hash> (<date>) · Handoff: <status>
 - Rows (page `<NN — Area>`): Flow: <name> (n frames) · … · States: <ScreenID> (n frames) · Components: n
 
 ## Design assumptions
@@ -161,12 +185,15 @@ A-01 … (one line each: assumption · what it affects)
 ## Not represented
 <transition or element> — <reason: tool limitation / system-triggered / leaves the app / blocked>
 
-## Approved assumptions / pending in spec
-<user-approved interpretations and answers not yet in the spec>
+## Pending in spec
+<approved changes drawn in Figma but not yet in the spec — removed once the spec has them>
 
 ## Last validation
-<date> · PASS | CONDITIONAL | FAIL · open MINOR issues, if any
+<date> · PASS | CONDITIONAL | FAIL · open MINOR issues, if any   (one line — replaced, not appended)
 ```
 
-Node IDs are not stored — find frames by name; the file is rewritten in place. If it grows beyond
-a screen or two, something belongs in the spec or the Figma file instead.
+The sidecar is the current state, not a log: the header carries only the latest spec hash, no
+"updated on … for …" chain; assumptions that no longer apply are deleted; per-change results go
+into the reply, and git keeps the history. Node IDs are not stored — find frames by name; the file
+is rewritten in place. If it grows beyond a screen or two, something belongs in the spec or the
+Figma file instead.

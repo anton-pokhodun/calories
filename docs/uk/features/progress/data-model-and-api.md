@@ -12,8 +12,8 @@
 | `OnboardingAnswers` | `onboarding-questionnaire.md` §4 | незмінний знімок відповідей, `created_at`, `model_version` | не потрібна напряму |
 | `CalorieEstimate` | `calculation-model.md` §6 | незмінний запис: `model_version`, `inputs`, BMR, PAL, TDEE, дефіцит, `target_kcal`, `created_at` | **історія цілей є**; бракує локальної дати дії |
 | `WeightEntry` | `onboarding-questionnaire.md` §4 | `measured_at`, `kg`, `source` | у Прогресі v1 не використовується |
-| `FoodEntry` | `adaptive-personalization.md` §2 | `logged_at`, `meal`, `kcal`, `source`, `edited` | **недостатньо**: немає Б/В/Ж, кількості, одиниці, `food_id`, локальної дати, ознаки видалення |
-| `DayLog` | `adaptive-personalization.md` §2 | `date, entries_count, kcal_total, meals_covered, user_marked_complete?, fasting_marked?` | концепція; одне означення повного запису для Прогресу й двигуна (PR-D16); пропонуємо **не зберігати**, а обчислювати (= `DaySummary`, §3) |
+| `FoodEntry` | `adaptive-personalization.md` §2 | `logged_at`, `kcal`, `source`, `edited` | **недостатньо**: немає Б/В/Ж, кількості, одиниці, `food_id`, локальної дати, ознаки видалення |
+| `DayLog` | `adaptive-personalization.md` §2 | `date, entries_count, kcal_total, user_marked_complete?, fasting_marked?` | концепція; одне означення повного запису для Прогресу й двигуна (PR-D16); пропонуємо **не зберігати**, а обчислювати (= `DaySummary`, §3) |
 | `GoalChange` | `adaptive-personalization.md` §2 | `at, goal, pace, goal_weight` | дублює `CalorieEstimate` для цілей Прогресу; не потрібна |
 
 Цілей Б/В/Ж немає ніде (рішення PR-D1: не вводимо). Позначки «день завершено» немає (рішення PR-D2: не вводимо; `user_marked_complete` лишається невикористаним).
@@ -30,15 +30,15 @@
 | `user_id` | UUID | так (явно) | |
 | `version` | int ≥ 1 | так | редагування CT-04 = `version + 1` того самого `id` |
 | `food_id` | UUID? | так | посилання на довідник; `null` для швидкого додавання й частини фото/AI |
-| `food_name` | string | так | знімок назви («Швидке додавання» для CT-08 без назви) |
-| `logged_at` | timestamp UTC | є | |
+| `food_name` | string | так | знімок назви (для CT-08 — введена назва, без назви — «Свої калорії», Q52; раніше «Введено вручну», до Q45 — «Швидке додавання») |
+| `logged_at` | timestamp UTC | є | також групує записи в картки за часом на CT-01 (core Q49: < 60 хв — одна картка) |
+| `session_id` | string? | **додати** | сесія додавання CT-02 (до «Готово»); групує їжу, дописану на минулий день, у картку «Дописано» (core Q49) |
 | `tz` | IANA string | так | аудит; напр. `Europe/Kyiv` |
 | `local_date` | date | так | **ключ групування** (`calculation-specification.md` §3) |
-| `meal` | enum breakfast / lunch / dinner / snack | є | |
-| `quantity`, `unit` | decimal, enum g / ml / serving / одиниця продукту | так | знімок порції CT-03 |
+| `quantity`, `unit` | decimal, enum g / ml / kcal / одиниця продукту (з вагою в г або мл; serving — лише якщо база не дає іншої) | так | знімок кількості CT-03 (Q52: у UI — «1 шт. (118 г)», «150 г»; для CT-08 — kcal) |
 | `kcal` | decimal ≥ 0 | є | **знімок** на момент запису |
 | `protein_g`, `carbs_g`, `fat_g` | decimal?, 1 знак | так | **знімки**; `null` = невідомо (не 0) |
-| `source` | enum search / recent / saved / barcode / photo_ai / quick_add | є (розширено значенням recent/saved — за потреби) | |
+| `source` | enum search / recent / saved / barcode / photo_ai / manual (CT-08 «Ввести вручну», Q45; було quick_add); знак джерела в UI (Q46, Q51): search, recent, saved, manual → ✎ (вручну), barcode → ▥ (штрихкод), photo_ai → бейдж «AI» | є (розширено значенням recent/saved — за потреби) | |
 | `deleted_at` | timestamp? | так | м'яке видалення (CT-04 «Видалити», скасування, панель CT-02) |
 | `edited` | bool | є | можна виводити з `version > 1` |
 
@@ -50,7 +50,7 @@
 |---|---|---|
 | `effective_date` | date | локальна дата, з якої ця ціль діє (`calculation-specification.md` §3.3) |
 
-`target_kcal` може бути `null` для режиму без норми (ON-11) — тоді Прогрес не показує порівнянь. Нових полів цілей Б/В/Ж не додаємо.
+`target_kcal` може бути `null` для режиму без норми (ON-11) — тоді Прогрес не показує порівнянь. Цілі Б/В/Ж для «Прогресу» не додаємо (PR-D1). **Додано 2026-11-23 (SD-13):** `CalorieEstimate.macro_targets` (`calculation-model.md` §6) і окремий запис своїх значень користувача (`MacroOverride`: нутрієнт, грами, `created_at`) — для показу норми на «Сьогодні» (core Q54); кожен день бере норму, що діяла того дня; у відповідях API «Прогресу» ці поля не повертаються.
 
 ### 2.3 Користувач
 
@@ -64,7 +64,7 @@
 |---|---|---|
 | `user_id` | UUID | |
 | `local_date` | date | день, про який питали |
-| `answer` | enum `all` («Так, це все») / `not_all` («Ні, не все») | змінює статус дня (`calculation-specification.md` §4.4, правило 6) |
+| `answer` | enum `all` («Так, це все») / `not_all` («Ні, не все») | змінює статус дня (`calculation-specification.md` §4.4, правило 5) |
 | `answered_at` | timestamp UTC | аудит; остання відповідь перемагає |
 | `kept_at` | timestamp UTC, nullable | лише для `not_all`: людина натиснула «Залишити так» — рядок дня більше не показується в картці «Перевірте записи» (рішення PR-D23). Статус дня не змінює |
 
@@ -109,13 +109,13 @@ insights(current, previous, hasTarget, params) → Insight[]   (≤ 2)
   "from": "2026-11-09", "to": "2026-11-15",
   "today": "2026-11-18",
   "days": [
-    {"date": "2026-11-09", "status": "complete",  "meals_covered": 3, "kcal": 1820.0, "target_kcal": 1750, "diff_kcal": 70,  "band": "within",
+    {"date": "2026-11-09", "status": "complete",  "entries": 3,       "kcal": 1820.0, "target_kcal": 1750, "diff_kcal": 70,  "band": "within",
      "macros": {"protein_g": 100.0, "carbs_g": 218.4, "fat_g": 60.7}},
-    {"date": "2026-11-11", "status": "partial",   "meals_covered": 2, "kcal": 640.0,  "target_kcal": 1750, "diff_kcal": null, "band": null,
+    {"date": "2026-11-11", "status": "partial",   "entries": 2,       "kcal": 640.0,  "target_kcal": 1750, "diff_kcal": null, "band": null,
      "macros": {"protein_g": 35.2, "carbs_g": 76.8, "fat_g": 21.3}},
-    {"date": "2026-11-12", "status": "complete",  "meals_covered": 4, "kcal": 1910.0, "target_kcal": 1750, "diff_kcal": 160, "band": "above",
+    {"date": "2026-11-12", "status": "complete",  "entries": 4,       "kcal": 1910.0, "target_kcal": 1750, "diff_kcal": 160, "band": "above",
      "macros": {"protein_g": null, "carbs_g": null, "fat_g": null}},
-    {"date": "2026-11-14", "status": "no_data",   "meals_covered": 0, "kcal": null,   "target_kcal": 1750, "diff_kcal": null, "band": null,
+    {"date": "2026-11-14", "status": "no_data",   "entries": 0,       "kcal": null,   "target_kcal": 1750, "diff_kcal": null, "band": null,
      "macros": {"protein_g": null, "carbs_g": null, "fat_g": null}}
   ],
   "counts": {"complete": 5, "partial": 1, "no_data": 1, "in_progress": 0, "future": 0, "before_start": 0, "past": 7},
@@ -131,7 +131,7 @@ insights(current, previous, hasTarget, params) → Insight[]   (≤ 2)
 }
 ```
 (Масив `days` скорочено; повний — 7 днів тижня або всі дні місяця.)
-Кожен день також містить `usual_meals` (звична кількість прийомів на цей день), `usual_kcal` (звичні калорії), `reason`: `meals` | `not_all` | `low_kcal_pending` | `confirmed_low` і `needs_answer` (true для «малого» дня без відповіді за останні 7 днів), `in_check_card` (true, якщо день показується в картці «Перевірте записи»: `needs_answer`, або відповідь `not_all` без `kept_at` за останні 7 днів — тоді рядок у вигляді «Не враховуємо в середньому» з «Дописати їжу» / «Залишити так», PR-D23) (`calculation-specification.md` §4.4, рішення PR-D13, PR-D14, PR-D21). Модуль також отримує на вхід відповіді `DayAnswer`.
+Кожен день також містить `usual_kcal` (звичні калорії), `reason`: `not_all` | `low_kcal_pending` | `confirmed_low` і `needs_answer` (true для «малого» дня без відповіді за останні 7 днів), `in_check_card` (true, якщо день показується в картці «Перевірте записи»: `needs_answer`, або відповідь `not_all` без `kept_at` за останні 7 днів — тоді рядок у вигляді «Не враховуємо в середньому» з «Дописати їжу» / «Залишити так», PR-D23) (`calculation-specification.md` §4.4, рішення PR-D14, PR-D21, PR-D25). Модуль також отримує на вхід відповіді `DayAnswer`.
 
 **Представлення відсутніх даних:** `null` означає «немає даних / не рахується» і ніколи не замінюється нулем; `value: null` у середніх — «мало даних» (менше мінімуму днів). **Історична ціль:** `target_kcal` у кожному дні — ціль, що діяла того дня; поточна ціль окремо не передається.
 
@@ -146,7 +146,7 @@ insights(current, previous, hasTarget, params) → Insight[]   (≤ 2)
 | Мало повних днів | середні `null` | стан «Мало даних» |
 | Немає оцінки цілі (ON-11) | `target_kcal: null`, `target_comparison.n = 0` | без лінії цілі й порівнянь |
 | Локальні дані не завантажилися (помилка сховища) | виняток модуля не кидається; шар даних повертає помилку | стан «Не вдалося завантажити» + «Спробувати знову» |
-| Запис з `kcal < 0` чи невідомим `meal` | відкидається (`calculation-specification.md` §4.1) | — ; подія в логах якості даних |
+| Запис з `kcal < 0` | відкидається (`calculation-specification.md` §4.1) | — ; подія в логах якості даних |
 
 ---
 
