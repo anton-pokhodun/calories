@@ -58,7 +58,7 @@ existing file's structure; create only pages the MVP needs.
 | 1 | `01 — Onboarding` | ON- flow rows, its states row, end copies of the screens it hands over to |
 | 2 | `02 — Daily Logging` | Today (CT-01), food logging (CT-02…CT-08), editing (CT-04), settings (ST-) — one page because they form one loop and prototype links cannot cross pages; states rows next to their screens |
 | 3 | `03 — Progress` | PR- rows and states; entry is a copy of CT-01 with the tab bar |
-| 4 | `04 — Components` | Wireframe components in sections Core / Daily logging / Onboarding / Progress |
+| 4 | `04 — Components` | Wireframe components in sections Core / Daily logging / Onboarding / Progress; left of Core the section `Tokens — змінні кольорів і текстові стилі` (token sheet: colour variables and iOS text styles, bound samples; maintained by `wireframe-design-validator`) |
 | 5 | `05 — Archive` | Replaced frames and earlier versions (one section per change, with a note why) |
 
 A new area gets its own page only if its frames are not reached from another page's flow.
@@ -86,6 +86,18 @@ Where a flow continues on another page, end the row with a copy of the next scre
 - Children, top to bottom: `Region/<name>` — one per Layout row of the spec (Status bar first).
   Fixed regions pinned to their edge; the scrolling area between; lists show the realistic visible
   portion, cut at the fold. Use auto-layout for stacks.
+- **Screen structure (owner, 2026-11-28):** a plain screen frame is a vertical auto layout; pinned
+  regions (tab bar, FAB, bottom action, sheet) and `Note/` layers are absolute-positioned children.
+  Overlays may stay layered (scrim, dimmed copy, sheet). A region made of one component **is** that
+  instance, renamed `Region/<name>`; never put an unpainted wrapper frame between a region and its
+  instance — padding goes on the region. The visible sheet bottom sits on the screen bottom (or on the
+  keyboard top).
+- **System first (owner, 2026-11-28):** any change of look goes to the token, then to the main
+  component, and only screen-specific content to the frame — never instance overrides or raw values
+  to restyle an element (`CLAUDE.md`).
+- **Tokens:** when the file has the collections `color` / `size` and text styles `iOS/…`, bind every
+  new fill, stroke, text style, padding, gap and radius to them (`wireframe-design-validator`
+  `design-rules.md` §3, §5, §8, §9); never type a raw value that a token covers.
 - Frame: `<ScreenID> <Screen name>` · state `… / State: <state>` · overlay `… / Overlay` (use the
   spec's IDs). Region: `Region/<name>`. Component: `WF/<Category>/<Name>` + variant properties.
   Annotation: `Note/…` (validation ignores them). Rows: `Flow: …`, `States: <ScreenID>`.
@@ -130,8 +142,8 @@ change that can move or resize an element (relayout, component edit, text change
 removed region, frame resize) is followed by a re-sync — never by moving marks by hand.
 
 1. **Anchor.** When a mark is created, store the tapped node on it:
-   `mark.setSharedPluginData('wf', 'target', tappedNode.id)` on `Note/Tap target N`,
-   `Note/Badge N` and `Note/Arrow N` (the arrow also stores `'dest'` = the destination frame id).
+   `mark.setSharedPluginData('wireframes', 'target', tappedNode.id)` on `Note/Tap target N`,
+   `Note/Badge N` and `Note/Arrow N` (the arrow also stores `'dest'` = the destination frame id). The namespace must be ≥ 3 characters (`'wf'` throws); `setPluginData` is not available in `use_figma`.
    A mark without an anchor is a defect.
 2. **Re-sync** (one retry-safe `use_figma` per page, at the end of every task that edited frames
    or components): for each `Note/` mark with an anchor, read the target's `absoluteBoundingBox`

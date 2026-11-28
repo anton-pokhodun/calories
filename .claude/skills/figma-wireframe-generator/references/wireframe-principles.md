@@ -61,7 +61,12 @@ element repeats.
 
 ## 3. Layout inside the viewport
 
-- **Margins:** 16 px left/right on every frame; 8-pt spacing scale (8 / 16 / 24 / 32).
+- **Margins:** 16 px left/right on every frame. **Spacing scale (4 pt):** every auto-layout gap and
+  padding and every gap between stacked regions is one of 0 / 2 / 4 / 8 / 12 / 16 / 20 / 24 / 32 / 48;
+  a value the spec states explicitly (e.g. 13 pt) wins. Change spacing in the main component, not
+  per instance; after a change that alters heights, restack the affected screens by their screen
+  ID and region order, re-anchor bottom sheets to the bottom edge, then re-sync the marks
+  (`figma-structure.md` §6a).
 - **Vertical order follows mobile conventions:** status bar → header/navigation → title/context →
   search/filters/tabs → main content (scrolls) → sticky actions / summary bar → bottom navigation.
   Change the order only if the spec says so.
@@ -79,11 +84,12 @@ element repeats.
 ## 4. Low-fidelity visual language
 
 - Greyscale only. Ramp: text `#1A1A1A`, secondary text `#6B6B6B`, borders `#BDBDBD`, fills
-  `#E0E0E0` / `#F2F2F2`, background `#FFFFFF`, scrim black at 40 % opacity. One exception: an
-  annotation colour (e.g. `#3D7BFF`) used **only** on `Note/` layers and supplementary arrows,
-  never inside the UI.
-- One font family (Inter, or whatever the file already uses), sizes 12 / 14 / 16 / 20 / 24–28,
-  Regular and Semi Bold. Minimum 12 px so screens are readable in screenshots.
+  `#E0E0E0` / `#F2F2F2`, background `#FFFFFF`, scrim black at 40 % opacity. One exception: the
+  link colour `#3D7BFF` — inside the UI only on tappable text actions and links (and their glyphs,
+  the focus outline of an active field); outside the UI on `Note/` layers and supplementary arrows.
+- One font family (Inter, or whatever the file already uses), sizes from the iOS text styles:
+  11 / 12 / 13 / 15 / 16 / 17 / 20 / 22 / 28 / 34 (Body and Headline 17, Subheadline 15), Regular and
+  Semi Bold. Minimum 11 px. Text used as an icon glyph is sized as an icon.
 - Simple rectangles and ellipses, 1 px borders, small uniform corner radius (8; 12 for cards and
   sheets). No shadows, gradients, illustrations, photos, brand colours or icon art.
 - Buttons and other interactive elements must be clearly distinguishable from static text (filled
@@ -141,6 +147,8 @@ sheet chrome, toasts, sticky bars, bottom navigation.
 - On the Components page, lay components out in labelled groups (Buttons, Inputs, Lists, Cards,
   Navigation, Sheets & dialogs, Feedback) with their variants side by side.
 - If the file already contains equivalent components, reuse them instead of creating duplicates.
+- A group of layers you are about to draw a third time (a card, a chart column, an empty-state
+  block) becomes a component first; copies of plain frames across screens are not allowed.
 
 ## 8. Language, copy and sample values
 

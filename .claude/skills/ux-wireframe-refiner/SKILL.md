@@ -95,7 +95,13 @@ one-line plan and go to Step 5.
 variants, overlays' backdrop copies, prototype reactions, transition marks and captions to change;
 what must remain untouched. Snapshot the "before" (screenshots + read-only dump of the frames).
 
-**Step 6 — Implement in small steps** (`refinement-validation.md` §3). Modify in place; reuse
+**Step 6 — Implement in small steps** (`refinement-validation.md` §3). **System first** (`CLAUDE.md`,
+owner decision 2026-11-28): a visual value change goes to the token (variables `color` / `size`, text
+styles `iOS/…`), an element change to the main component on `04 — Components`, and only what is
+screen-specific (region order, copy, chosen variant) to the frame. Never restyle an element with
+instance overrides or raw values; an element that will appear on 2+ screens becomes a component first;
+a value off the scales is proposed as a token (owner approval). After a token / style change, update the
+`Tokens` sheet. Modify in place; reuse
 components; propagate to every related screen and state; rewire reactions; re-screenshot after
 each logical step.
 
